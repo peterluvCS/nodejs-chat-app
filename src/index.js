@@ -54,13 +54,14 @@ io.on("connection", socket => {
 
   socket.on("sendLocation", (coords, callback) => {
     const user = getUser(socket.id);
+    console.log(`${user.username} shared location:lat=${coords.latitude},lng=${coords.longitude}`);
     io.to(user.room).emit("locationMessage", generateLocationMessage(user.username, `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`));
     callback();
   });
 
   socket.on("disconnect", () => {
     const user = removeUser(socket.id);
-
+    console.log(`User disconnected: ${user ? user.username : "Unknown user"}`);
     if (user) {
       io.to(user.room).emit("message", generateMessage("Admin", `${user.username} has left!`));
       io.to(user.room).emit("roomData", {
