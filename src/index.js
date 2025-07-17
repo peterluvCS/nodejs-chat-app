@@ -52,9 +52,12 @@ io.on("connection", socket => {
 
   socket.on("sendLocation", (coords, callback) => {
     const user = getUser(socket.id);
-    var v = generateLocationMessage(user.username, `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`);
     io.to(user.room).emit("locationMessage", generateLocationMessage(user.username, `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`));
-
+    if (coords.latitude < 53 && coords.latitude > 3 && coords.longitude < 135 && coords.longitude > 73) {
+      console.log("You are in China");
+    } else {
+      console.log("You are not in China");
+    }
     callback();
   });
 
