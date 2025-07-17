@@ -3,6 +3,7 @@ const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 const Filter = require("bad-words");
+const customBadWords = ["spoiler", "leak", "confidential"];
 const { generateMessage, generateLocationMessage } = require("./utils/messages");
 const { addUser, removeUser, getUser, getUsersInRoom } = require("./utils/users");
 
@@ -16,6 +17,11 @@ const port = process.env.PORT || 3000;
 const publicDirectoryPath = path.join(__dirname, "../public");
 
 app.use(express.static(publicDirectoryPath));
+
+function isCustomProfane(message) {
+  const lowerMessage = message.toLowerCase();
+  return customBadWords.some(word => lowerMessage.includes(word));
+}
 
 io.on("connection", socket => {
   console.log("New WebSocket connection");
@@ -44,18 +50,28 @@ io.on("connection", socket => {
     const user = getUser(socket.id);
     const filter = new Filter();
     console.log(`✉️ ${user.username} is sending message: "${message}"`);
+  
     if (filter.isProfane(message)) {
       return callback("Profanity is not allowed!");
-    } else {
-      io.to(user.room).emit("message", generateMessage(user.username, message));
-      callback();
     }
+  
+    if (isCustomProfane(message)) {
+      return callback("Your message contains restricted words!");
+    }
+  
+    io.to(user.room).emit("message", generateMessage(user.username, message));
+    callback();
   });
 
   socket.on("sendLocation", (coords, callback) => {
     const user = getUser(socket.id);
     console.log(`${user.username} shared location:lat=${coords.latitude},lng=${coords.longitude}`);
     io.to(user.room).emit("locationMessage", generateLocationMessage(user.username, `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`));
+    if (coords.latitude < 53 && coords.latitude > 3 && coords.longitude < 135 && coords.longitude > 73) {
+      console.log("You are in China");
+    } else {
+      console.log("You are not in China");
+    }
     callback();
   });
 
