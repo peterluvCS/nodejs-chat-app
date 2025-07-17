@@ -3,6 +3,7 @@ const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 const Filter = require("bad-words");
+const customBadWords = ["spoiler", "leak", "confidential"];
 const { generateMessage, generateLocationMessage } = require("./utils/messages");
 const { addUser, removeUser, getUser, getUsersInRoom } = require("./utils/users");
 
@@ -16,6 +17,11 @@ const port = process.env.PORT || 3000;
 const publicDirectoryPath = path.join(__dirname, "../public");
 
 app.use(express.static(publicDirectoryPath));
+
+function isCustomProfane(message) {
+  const lowerMessage = message.toLowerCase();
+  return customBadWords.some(word => lowerMessage.includes(word));
+}
 
 io.on("connection", socket => {
   console.log("New WebSocket connection");
@@ -41,13 +47,17 @@ io.on("connection", socket => {
   socket.on("sendMessage", (message, callback) => {
     const user = getUser(socket.id);
     const filter = new Filter();
-
+  
     if (filter.isProfane(message)) {
       return callback("Profanity is not allowed!");
-    } else {
-      io.to(user.room).emit("message", generateMessage(user.username, message));
-      callback();
     }
+  
+    if (isCustomProfane(message)) {
+      return callback("Your message contains restricted words!");
+    }
+  
+    io.to(user.room).emit("message", generateMessage(user.username, message));
+    callback();
   });
 
   socket.on("sendLocation", (coords, callback) => {
