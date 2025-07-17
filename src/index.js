@@ -19,9 +19,9 @@ app.use(express.static(publicDirectoryPath));
 
 io.on("connection", socket => {
   console.log("New WebSocket connection");
-  console.log("This is new console.log from feature1 by Alexis Tan")
 
   socket.on("join", (options, callback) => {
+    console.log("join event triggered with options:", options);
     const { error, user } = addUser({ id: socket.id, ...options });
     if (error) {
       return callback(error);
@@ -40,9 +40,10 @@ io.on("connection", socket => {
   });
 
   socket.on("sendMessage", (message, callback) => {
+    
     const user = getUser(socket.id);
     const filter = new Filter();
-
+    console.log(`✉️ ${user.username} is sending message: "${message}"`);
     if (filter.isProfane(message)) {
       return callback("Profanity is not allowed!");
     } else {
