@@ -19,6 +19,7 @@ app.use(express.static(publicDirectoryPath));
 
 io.on("connection", socket => {
   console.log("New WebSocket connection");
+  console.log("This is new console.log from feature1 by Alexis Tan")
 
   socket.on("join", (options, callback) => {
     const { error, user } = addUser({ id: socket.id, ...options });
